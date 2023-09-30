@@ -19,7 +19,7 @@ set(SOURCES_APP
         pool.cpp
         interpret.cpp)
 
-set(nameApp bulkserver)
+set(nameApp bulk_server)
 add_executable(${nameApp} ${SOURCES_APP})
 
 target_link_libraries(${nameApp} ${Boost_LIBRARIES})
