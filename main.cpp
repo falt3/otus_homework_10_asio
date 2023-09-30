@@ -1,16 +1,23 @@
+/**
+ * @file main.cpp
+ * @author Lipatkin Dmitry
+ * @brief 
+ * @version 0.1
+ * @date 2023-09-30
+ * 
+ * @copyright Copyright (c) 2023
+ */
+
 #include <iostream>
 #include <chrono>
 #include <thread>
 #include <string>
 
-#include "pool.h"
-#include "connection.h"
-// #include "config.h"
-
 #include <boost/asio/io_service.hpp>
 #include <boost/asio/ip/tcp.hpp>
-// #include <boost/asio/steady_timer.hpp>
 
+#include "pool.h"
+#include "connection.h"
 
 //-----------------------------------------------------------
 
@@ -59,7 +66,6 @@ void server(tcp::acceptor &acceptor, std::shared_ptr<Interpretator> interpS, int
 //----------------------------------------------------------------------------
 /**
  * @brief Функция вывода в консоль
- * 
  */
 void ff_console(std::shared_ptr<BlockCommands>& block, int /*id*/) 
 {
@@ -69,7 +75,6 @@ void ff_console(std::shared_ptr<BlockCommands>& block, int /*id*/)
 
 /**
  * @brief Функция вывода в файл
- * 
  */
 void ff_file(std::shared_ptr<BlockCommands>& block, int id) 
 {
