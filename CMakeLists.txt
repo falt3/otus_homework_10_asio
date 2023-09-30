@@ -3,7 +3,7 @@ cmake_minimum_required(VERSION 3.5)
 set(PATCH_VERSION "0" CACHE INTERNAL "Patch version")
 set(PROJECT_VERSION 0.0.${PATCH_VERSION})
 
-project(ProjectBulkServer VERSION ${PROJECT_VERSION})
+project(BulkServer VERSION ${PROJECT_VERSION})
 
 find_package(Boost COMPONENTS 
     program_options
