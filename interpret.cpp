@@ -4,9 +4,10 @@
 /**
  * @brief Функция обработки входной строки в команды
  * 
- * @param[in] line     строка команд
+ * @param[in] line      строка команд
+ * @return              код ошибки  
  */
-void Interpretator::input(std::string& line) 
+int Interpretator::input(std::string& line) 
 {
     if (line == "{") {
         if (dinamicBlock == 0 && block->size() > 0) {
@@ -18,7 +19,7 @@ void Interpretator::input(std::string& line)
     }
     else if (line == "}") {
         if (dinamicBlock == 0) 
-            return;
+            return 1;
         dinamicBlock--;
         if (dinamicBlock == 0) {
             if (block->size() > 0) {
@@ -30,10 +31,11 @@ void Interpretator::input(std::string& line)
     else {
         block->addCommand(line);
         if (dinamicBlock == 0) {
-            if (block->size() == maxSize) {
+            if (block->size() == m_sizeBlock) {
                 notify(block);
                 block.reset(new BlockCommands());
             }
         }
     }
+    return 0;
 }

@@ -13,52 +13,45 @@
 
 
 //-----------------------------------------------------------
-// Other
 
-void print_time() {
-    using clock = std::chrono::system_clock;
-
-    auto time_point = clock::now();
-    std::time_t time = clock::to_time_t(time_point);
-    std::cout << std::ctime(&time) << std::endl;
-}
-
-//-----------------------------------------------------------
-
-void server(tcp::acceptor &acceptor, std::shared_ptr<Interpretator> interp, int& countConnection) 
+void server(tcp::acceptor &acceptor, std::shared_ptr<Interpretator> interpS, int& countConnection) 
 {
-    std::cout << "accept\n";
+    // std::cout << "accept\n";
     acceptor.async_accept(
-        [&acceptor, interp, &countConnection] 
+        [&acceptor, interpS, &countConnection] 
         (const boost::system::error_code& err,  tcp::socket socket) {
-            std::cout << "new connection: "<< socket.local_endpoint().address().to_string() 
-                      << ":" << socket.local_endpoint().port() << "\n";
+            // std::cout << "new connection: "<< socket.local_endpoint().address().to_string() 
+            //           << ":" << socket.local_endpoint().port() << "\n";
             
             if (!err) {
                 ++countConnection;
-                /// ожидание завершения соадинения
+
+                /// ожидание завершения соединения
                 socket.async_wait(tcp::socket::wait_error, 
-                    [interp, &countConnection](const boost::system::error_code& error) {
+                    [interpS, &countConnection](const boost::system::error_code& error) {
                         --countConnection;
                         if (error) {
-                            std::cout << "error: " << error.value() << " " << error.category().name()
-                                << " " << error.message() << " " << "\n";
+                            // std::cout << "error: " << error.value() << " " << error.category().name()
+                            //     << " " << error.message() << " " << "\n";
                             if (countConnection == 0) 
-                                interp->exit();
+                                interpS->closeBlock();
                         }
                     }
                 );
 
-                /// Контекст для статического блока, он один на соединение
-                auto interpD = std::unique_ptr<InterpretatorDynamic>(new InterpretatorDynamic(interp->size()));
-                interpD->addSubscribers(*interp);    // копирование подписчиков из писателя
                 // Новое соединение 
-                const std::shared_ptr<Connection> connection { new Connection(
-                    std::move(socket), std::move(interpD), interp) };
+                const std::shared_ptr<Connection> connection { new Connection(std::move(socket)) };
+
+                /// Обработчик для динамического блока
+                auto interpD = std::shared_ptr<Interpretator>(new InterpretatorDynamic());
+                interpD->addSubscribers(*interpS);    // копирование подписчиков из писателя
+
+                connection->addInterpretator(interpD);
+                connection->addInterpretator(interpS);
                 connection->read();
             }
 
-            server(acceptor, interp, countConnection);
+            server(acceptor, interpS, countConnection);
         }
     );
 }
@@ -80,7 +73,6 @@ void ff_console(std::shared_ptr<BlockCommands>& block, int /*id*/)
  */
 void ff_file(std::shared_ptr<BlockCommands>& block, int id) 
 {
-    std::cout << "file\n";
     std::ostringstream fileName;
     fileName << "./bulk" << block->time() << "_" << id << ".log";
     std::fstream fs(fileName.str(), std::fstream::app);
@@ -97,11 +89,11 @@ int main(int argc, const char* argv[])
 {    
     int port = 9000;
     int sizeBlock = 3;
-    if (argc > 2) {
+    if (argc > 1)
         port = std::stoi(argv[1]);
+    if (argc > 2) 
         sizeBlock = std::stoi(argv[2]);
-    }
-    std::cout << "port: " << port << " size: " << sizeBlock << std::endl;
+    // std::cout << "port: " << port << " size: " << sizeBlock << std::endl;
 
     /// количество текущих соединений
     int countConnection = 0;
@@ -110,8 +102,8 @@ int main(int argc, const char* argv[])
     auto poolThreadConsole = std::shared_ptr<PoolThread>(new PoolThread(1, ff_console));
     /// Пул потоков (2 потока) для записи в файл с очередью
     auto poolThreadFile = std::shared_ptr<PoolThread>(new PoolThread(2, ff_file));
-    /// Контекст для статического блока, он один на все соединения
-    auto interpret = std::shared_ptr<Interpretator>(new Interpretator(sizeBlock));
+    /// Обработчик для статического блока, он один на все соединения
+    auto interpret = std::shared_ptr<Interpretator>(new InterpretatorStatic(sizeBlock));
     interpret->addSubscriber(poolThreadConsole);
     interpret->addSubscriber(poolThreadFile);
 

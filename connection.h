@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <memory>
+#include <vector>
 #include <boost/asio/read_until.hpp>
 #include <boost/asio/streambuf.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -10,22 +11,22 @@
 
 
 
+
 namespace ba = boost::asio;
 using tcp = ba::ip::tcp;
 
 
 //-----------------------------------------------------------
-
+/**
+ * @brief Класс обработчика динамического блока
+ * 
+ */
 class InterpretatorDynamic : public Interpretator {
 public:
-    InterpretatorDynamic(int maxSize) : Interpretator(maxSize) {}
-    int inputDynamic(std::string& line) {
+    InterpretatorDynamic() : Interpretator(1) {}
+    int input(std::string& line) override 
+    {
         if (line == "{") {
-            if (dinamicBlock == 0 && block->size() > 0) {
-                // непредвиденное окончание обычного блока и начало динамического
-                notify(block);
-                block.reset(new BlockCommands());
-            }
             dinamicBlock++;
         }
         else if (line == "}") {
@@ -49,41 +50,54 @@ public:
     }
 };
 
-//-----------------------------------------------------------
+/**
+ * @brief Класс обработчика статического блока
+ * 
+ */
+class InterpretatorStatic : public Interpretator {
+public:
+    InterpretatorStatic(int sizeBlock) : Interpretator(sizeBlock) {}
+    int input(std::string& line) override 
+    {
+        block->addCommand(line);
+        if (block->size() == m_sizeBlock) {            
+            notify(block);
+            block.reset(new BlockCommands());
+        }
+        return 0;
+    }
+};
 
+//-----------------------------------------------------------
+/**
+ * @brief Класс соединения с клиентом
+ * 
+ */
 class Connection : public std::enable_shared_from_this<Connection> {
 public:
-    Connection(tcp::socket&& socket, std::unique_ptr<InterpretatorDynamic> interD,
-        std::shared_ptr<Interpretator> inter) : 
-        m_socket(std::move(socket)),
-        m_interpretDyn(std::move(interD)),
-        m_interpret(inter)
-    { 
-        std::cout << "Connection: constructor\n";
+    Connection(tcp::socket&& socket) : m_socket(std::move(socket)) { m_interpretators.reserve(2); }
+    void addInterpretator(std::shared_ptr<Interpretator> inter) {
+        m_interpretators.push_back(inter);
     }
-    // ~Connection() {}
     void read() {
         ba::async_read_until(m_socket, m_buffer, "\n",
             [self=shared_from_this()](boost::system::error_code err, std::size_t length){
                 self->readyRead(err, length);
             }   
         );
-        // m_socket.async_receive()
     }
    
 private:
     void readyRead(boost::system::error_code err, std::size_t length) {
-        if (err) {
-            std::cout << "readyRead error: " << err.value() << " " << err.message()
-                << " : " << err.category().name() << "\n";
+        if (err) { // закрытие сокета
+            // std::cout << "readyRead error: " << err.value() << " " << err.message()
+            //     << " : " << err.category().name() << "\n";
             return;
         }
         if (length > 0) {
             std::string str{ba::buffer_cast<const char *>(m_buffer.data()), length-1};
-            // std::cout << "read " << length << " " << str << "\n";
-            if (m_interpretDyn->inputDynamic(str) == 1) {
-                std::cout << "staticBlock " << str << "\n";
-                m_interpret->input(str);
+            for (auto& el : m_interpretators) {
+                if (el->input(str) == 0) break;
             }
         }
         m_buffer.consume(length);
@@ -92,6 +106,5 @@ private:
     };
     tcp::socket m_socket;
     ba::streambuf m_buffer;
-    std::unique_ptr<InterpretatorDynamic> m_interpretDyn;
-    std::shared_ptr<Interpretator> m_interpret;
+    std::vector<std::shared_ptr<Interpretator>> m_interpretators;
 };
