@@ -1,0 +1,6 @@
+<map id="Interpretator" name="Interpretator">
+<area shape="rect" id="node1" title="Класс перевода входных данных в блоки команд" alt="" coords="109,79,201,104"/>
+<area shape="rect" id="node3" href="$class_interpretator_dynamic.html" title="Класс обработчика динамического блока" alt="" coords="5,152,148,177"/>
+<area shape="rect" id="node4" href="$class_interpretator_static.html" title="Класс обработчика статического блока" alt="" coords="172,152,299,177"/>
+<area shape="rect" id="node2" href="$class_publisher.html" title=" " alt="" coords="57,5,254,31"/>
+</map>

@@ -1,0 +1,6 @@
+<map id="Graphical Class Hierarchy" name="Graphical Class Hierarchy">
+<area shape="rect" id="node1" href="$class_publisher.html" title=" " alt="" coords="5,31,203,56"/>
+<area shape="rect" id="node2" href="$class_interpretator.html" title="Класс перевода входных данных в блоки команд" alt="" coords="251,31,343,56"/>
+<area shape="rect" id="node3" href="$class_interpretator_dynamic.html" title="Класс обработчика динамического блока" alt="" coords="391,5,533,31"/>
+<area shape="rect" id="node4" href="$class_interpretator_static.html" title="Класс обработчика статического блока" alt="" coords="399,55,525,80"/>
+</map>
