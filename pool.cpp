@@ -62,8 +62,8 @@ void PoolThread::worker(int id)
 
             m_func(block, id);
 
-            using namespace std::chrono_literals;
-            std::this_thread::sleep_for(1ms);
+            // using namespace std::chrono_literals;
+            // std::this_thread::sleep_for(1ms);
         }
         else if (m_flagExit) break;
     }
